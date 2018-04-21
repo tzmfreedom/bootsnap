@@ -35,6 +35,15 @@ module Bootsnap
   end
 
   def self.setup_disable_trace
-    RubyVM::InstructionSequence.compile_option = { trace_instruction: false }
+    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.5.0')
+      warn(<<WARN_MESSAGE
+This method is not allowed to your Ruby version
+current: #{RUBY_VERSION}
+allowed version: < 2.5.0
+WARN_MESSAGE
+      )
+    else
+      RubyVM::InstructionSequence.compile_option = { trace_instruction: false }
+    end
   end
 end
