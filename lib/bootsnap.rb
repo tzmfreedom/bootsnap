@@ -37,4 +37,10 @@ module Bootsnap
   def self.setup_disable_trace
     RubyVM::InstructionSequence.compile_option = { trace_instruction: false }
   end
+
+  def self.enable_trace_point
+    class << RubyVM::InstructionSequence
+      prepend ::Bootsnap::TracePoint
+    end
+  end
 end

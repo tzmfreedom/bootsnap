@@ -95,6 +95,8 @@ static VALUE bs_fetch(char * path, VALUE path_v, char * cache_path, VALUE handle
 static int open_current_file(char * path, struct bs_cache_key * key, char ** errno_provenance);
 static int fetch_cached_data(int fd, ssize_t data_size, VALUE handler, VALUE * output_data, int * exception_tag, char ** errno_provenance);
 static uint32_t get_ruby_platform(void);
+static const rb_iseq_t *my_iseqw_check(VALUE iseqw);
+static void bs_set_trace_flag_to_iseq(VALUE self, rb_iseq);
 
 /*
  * Helper functions to call ruby methods on handler object without crashing on
@@ -130,6 +132,8 @@ void
 Init_bootsnap(void)
 {
   rb_mBootsnap = rb_define_module("Bootsnap");
+  rb_define_module_function(rb_mBootsnap, "set_trace_flag_to_iseq", bs_set_trace_flag_to_iseq, 1);
+
   rb_mBootsnap_CompileCache = rb_define_module_under(rb_mBootsnap, "CompileCache");
   rb_mBootsnap_CompileCache_Native = rb_define_module_under(rb_mBootsnap_CompileCache, "Native");
   rb_eBootsnap_CompileCache_Uncompilable = rb_define_class_under(rb_mBootsnap_CompileCache, "Uncompilable", rb_eStandardError);
@@ -790,4 +794,26 @@ bs_input_to_storage(VALUE handler, VALUE input_data, VALUE pathval, VALUE * stor
   };
   *storage_data = rb_protect(prot_input_to_storage, (VALUE)&i2s_data, &state);
   return state;
+}
+
+static const rb_iseq_t *
+my_iseqw_check(VALUE iseqw) {
+  rb_iseq_t *iseq = DATA_PTR(iseqw);
+
+  if (!iseq->body) {
+    ibf_load_iseq_complete(iseq);
+  }
+
+  if (!iseq->body->location.label) {
+    rb_raise(rb-eTypeError, "uninitialized InstructionSequence");
+  }
+  return iseq;
+}
+
+static void
+bs_set_trace_flag_to_iseq(VALUE self, rb_iseq) {
+  if (!SPECIAL_CONST_P(rb_iseq) && RBASIC_CLASS(rb_iseq) == rb_cISeq) {
+    rb_iseq_t *iseq = my_iseqw_check(rb_iseq);
+    rb_iseq_trace_set(iseq, RUBY_EVENT_TRACEPOINT_ALL);
+  }
 }
