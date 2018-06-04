@@ -15,7 +15,9 @@ module Bootsnap
       end
 
       def self.storage_to_output(binary)
-        RubyVM::InstructionSequence.load_from_binary(binary)
+        iseq = RubyVM::InstructionSequence.load_from_binary(binary)
+        set_trace_flag_to_iseq(iseq)
+        iseq
       rescue RuntimeError => e
         if e.message == 'broken binary format'
           STDERR.puts "[Bootsnap::CompileCache] warning: rejecting broken binary"
@@ -23,6 +25,11 @@ module Bootsnap
         else
           raise
         end
+      end
+
+      def self.set_trace_flag_to_iseq(iseq)
+        Bootsnap::CompileCache::Native.set_trace_flag_to_iseq(iseq)
+        # iseq.each_child { |child_iseq| set_trace_flag_to_iseq(child_iseq) }
       end
 
       def self.input_to_output(_)

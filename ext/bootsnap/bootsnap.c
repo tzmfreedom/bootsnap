@@ -106,6 +106,7 @@ static VALUE prot_input_to_output(VALUE arg);
 static void bs_input_to_output(VALUE handler, VALUE input_data, VALUE * output_data, int * exception_tag);
 static VALUE prot_input_to_storage(VALUE arg);
 static int bs_input_to_storage(VALUE handler, VALUE input_data, VALUE pathval, VALUE * storage_data);
+static VALUE bs_set_trace_flag_to_iseq(VALUE self, VALUE rb_iseq);
 struct s2o_data;
 struct i2o_data;
 struct i2s_data;
@@ -141,6 +142,7 @@ Init_bootsnap(void)
 
   rb_define_module_function(rb_mBootsnap_CompileCache_Native, "coverage_running?", bs_rb_coverage_running, 0);
   rb_define_module_function(rb_mBootsnap_CompileCache_Native, "fetch", bs_rb_fetch, 3);
+  rb_define_module_function(rb_mBootsnap_CompileCache_Native, "set_trace_flag_to_iseq", bs_set_trace_flag_to_iseq, 1);
   rb_define_module_function(rb_mBootsnap_CompileCache_Native, "compile_option_crc32=", bs_compile_option_crc32_set, 1);
 }
 
@@ -790,4 +792,10 @@ bs_input_to_storage(VALUE handler, VALUE input_data, VALUE pathval, VALUE * stor
   };
   *storage_data = rb_protect(prot_input_to_storage, (VALUE)&i2s_data, &state);
   return state;
+}
+
+static VALUE
+bs_set_trace_flag_to_iseq(VALUE self, VALUE rb_iseq)
+{
+    rb_iseq_trace_set(rb_iseq, RUBY_EVENT_TRACEPOINT_ALL);
 }
